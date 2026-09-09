@@ -2,9 +2,10 @@
 require_once __DIR__ . '/includes/functions.php';
 
 $view = $_GET['view'] ?? 'current';
-if (!in_array($view, ['current', 'volumes', 'years'], true)) $view = 'current';
+if (!in_array($view, ['current', 'volumes', 'years', 'authors'], true)) $view = 'current';
 $volumeParam = isset($_GET['volume']) ? (int)$_GET['volume'] : null;
 $yearParam = isset($_GET['year']) ? (int)$_GET['year'] : null;
+$authorParam = isset($_GET['author']) ? trim((string)$_GET['author']) : null;
 
 $pageTitle = 'Journals';
 
@@ -26,6 +27,9 @@ function journal_card($j)
       <div class="pub-body">
         <div class="pub-meta">Vol. <?= (int)$j['volume'] ?>, Issue <?= (int)$j['issue'] ?> &middot; <?= format_date($j['publication_date'], 'M j, Y') ?></div>
         <h3><?= e($j['title']) ?></h3>
+        <?php if (!empty($j['authors'])): ?>
+          <div class="pub-authors">By <?= e($j['authors']) ?></div>
+        <?php endif; ?>
         <p><?= e(mb_strimwidth((string)$j['description'], 0, 110, '…')) ?></p>
         <div class="pub-actions">
           <a href="<?= base_url('journal-view.php?id=' . $j['id']) ?>" class="btn btn-navy btn-sm">View</a>
@@ -42,7 +46,14 @@ require __DIR__ . '/includes/header.php';
 <section class="page-hero">
   <div class="container">
     <h1>Journal Archive</h1>
-    <p>Browse TEPAN's peer-reviewed conference journals by current issue, publication volume, or year.</p>
+    <p>Browse TEPAN's peer-reviewed journals by current issue, publication volume, year, or the individual person or group they belong to.</p>
+    <?php if (defined('JOURNAL_ISSN') && (JOURNAL_ISSN || JOURNAL_EISSN)): ?>
+      <p class="issn-line">
+        <?php if (JOURNAL_ISSN): ?>ISSN <?= e(JOURNAL_ISSN) ?> (Print)<?php endif; ?>
+        <?php if (JOURNAL_ISSN && JOURNAL_EISSN): ?> &nbsp;&middot;&nbsp; <?php endif; ?>
+        <?php if (JOURNAL_EISSN): ?>eISSN <?= e(JOURNAL_EISSN) ?> (Online)<?php endif; ?>
+      </p>
+    <?php endif; ?>
   </div>
 </section>
 
@@ -53,6 +64,7 @@ require __DIR__ . '/includes/header.php';
       <a href="<?= base_url('journals.php?view=current') ?>" class="<?= $view === 'current' ? 'active' : '' ?>">Current Issue</a>
       <a href="<?= base_url('journals.php?view=volumes') ?>" class="<?= $view === 'volumes' ? 'active' : '' ?>">Browse by Volume</a>
       <a href="<?= base_url('journals.php?view=years') ?>" class="<?= $view === 'years' ? 'active' : '' ?>">Browse by Year</a>
+      <a href="<?= base_url('journals.php?view=authors') ?>" class="<?= $view === 'authors' ? 'active' : '' ?>">Browse by Author</a>
     </div>
 
     <?php if ($view === 'current'):
@@ -154,6 +166,45 @@ require __DIR__ . '/includes/header.php';
           </div>
         <?php else: ?>
           <div class="empty-state"><div class="icon">📁</div><p>No journal publications yet.</p></div>
+        <?php endif; ?>
+      <?php endif; ?>
+
+    <?php elseif ($view === 'authors'):
+      if ($authorParam):
+        $stmt = db()->prepare("SELECT * FROM journals WHERE authors = ? ORDER BY publication_date DESC, volume DESC, issue DESC");
+        $stmt->execute([$authorParam]);
+        $items = $stmt->fetchAll();
+        ?>
+        <div class="breadcrumb">
+          <a href="<?= base_url('journals.php?view=authors') ?>">All Authors</a> <span class="sep">/</span> <?= e($authorParam) ?>
+        </div>
+        <div class="section-head"><h2>Journals by <?= e($authorParam) ?></h2></div>
+        <?php if ($items): ?>
+          <div class="card-grid">
+            <?php foreach ($items as $j) journal_card($j); ?>
+          </div>
+        <?php else: ?>
+          <div class="empty-state"><div class="icon">📁</div><p>No journals found for this author.</p></div>
+        <?php endif; ?>
+      <?php else:
+        $authors = get_author_summary(); ?>
+        <div class="section-head">
+          <div>
+            <h2>Browse by Author</h2>
+            <p class="section-desc">Journals contributed by a particular individual person or group of persons. Select a name to see everything credited to it.</p>
+          </div>
+        </div>
+        <?php if ($authors): ?>
+          <div class="author-list">
+            <?php foreach ($authors as $a): ?>
+              <a class="author-row" href="<?= base_url('journals.php?view=authors&author=' . rawurlencode($a['authors'])) ?>">
+                <span class="author-name"><?= e($a['authors']) ?></span>
+                <span class="author-count"><?= (int)$a['journal_count'] ?> journal<?= $a['journal_count'] == 1 ? '' : 's' ?> &middot; latest <?= (int)$a['latest_year'] ?></span>
+              </a>
+            <?php endforeach; ?>
+          </div>
+        <?php else: ?>
+          <div class="empty-state"><div class="icon">👤</div><p>No author-attributed journals have been uploaded yet.</p></div>
         <?php endif; ?>
       <?php endif; ?>
     <?php endif; ?>

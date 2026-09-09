@@ -46,12 +46,13 @@ require __DIR__ . '/includes/layout_header.php';
 <div class="table-wrap">
   <table>
     <thead>
-      <tr><th>Title</th><th>Volume</th><th>Issue</th><th>Year</th><th>Published</th><th>Downloads</th><th>Status</th><th>Actions</th></tr>
+      <tr><th>Title</th><th>Author(s)</th><th>Volume</th><th>Issue</th><th>Year</th><th>Published</th><th>Downloads</th><th>Status</th><th>Actions</th></tr>
     </thead>
     <tbody>
     <?php foreach ($journals as $j): ?>
       <tr>
         <td><?= e($j['title']) ?></td>
+        <td><?= $j['authors'] ? e($j['authors']) : '<span style="color:var(--text-muted);">&mdash;</span>' ?></td>
         <td><?= (int)$j['volume'] ?></td>
         <td><?= (int)$j['issue'] ?></td>
         <td><?= (int)$j['pub_year'] ?></td>

@@ -21,9 +21,25 @@ $activeNav = $activeNav ?? '';
     </div>
     <nav>
       <a href="<?= base_url('admin/index.php') ?>" class="<?= $activeNav === 'dashboard' ? 'active' : '' ?>">📊 Dashboard</a>
+
+      <div class="nav-section">Publishing</div>
       <a href="<?= base_url('admin/journals.php') ?>" class="<?= $activeNav === 'journals' ? 'active' : '' ?>">📰 Journals</a>
+      <a href="<?= base_url('admin/submissions.php') ?>" class="<?= $activeNav === 'submissions' ? 'active' : '' ?>">📥 Submissions</a>
+      <a href="<?= base_url('admin/board.php') ?>" class="<?= $activeNav === 'board' ? 'active' : '' ?>">👥 Editorial Board</a>
+      <a href="<?= base_url('admin/pages.php') ?>" class="<?= $activeNav === 'pages' ? 'active' : '' ?>">📄 Policy Pages</a>
+      <a href="<?= base_url('admin/resources.php') ?>" class="<?= $activeNav === 'resources' ? 'active' : '' ?>">📎 Author Resources</a>
+
+      <div class="nav-section">Conferences</div>
+      <a href="<?= base_url('admin/conferences.php') ?>" class="<?= $activeNav === 'conferences' ? 'active' : '' ?>">🎓 Editions &amp; CFP</a>
       <a href="<?= base_url('admin/proceedings.php') ?>" class="<?= $activeNav === 'proceedings' ? 'active' : '' ?>">🗂️ Proceedings</a>
-      <a href="<?= base_url('admin/messages.php') ?>" class="<?= $activeNav === 'messages' ? 'active' : '' ?>">✉️ Messages</a>
+
+      <div class="nav-section">Outreach</div>
+      <a href="<?= base_url('admin/announcements.php') ?>" class="<?= $activeNav === 'announcements' ? 'active' : '' ?>">📢 Announcements</a>
+      <a href="<?= base_url('admin/subscribers.php') ?>" class="<?= $activeNav === 'subscribers' ? 'active' : '' ?>">✉️ Subscribers</a>
+      <a href="<?= base_url('admin/messages.php') ?>" class="<?= $activeNav === 'messages' ? 'active' : '' ?>">💬 Messages</a>
+
+      <div class="nav-section">Account</div>
+      <a href="<?= base_url('admin/account.php') ?>" class="<?= $activeNav === 'account' ? 'active' : '' ?>">👤 My Account</a>
       <a href="<?= base_url('index.php') ?>" target="_blank">🔗 View Site</a>
       <a href="<?= base_url('admin/logout.php') ?>">🚪 Logout</a>
     </nav>

@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $issue = (int)($_POST['issue'] ?? 0);
         $pubDate = $_POST['publication_date'] ?? '';
         $editor = trim($_POST['editor'] ?? '');
+        $authors = trim($_POST['authors'] ?? '');
         $description = trim($_POST['description'] ?? '');
         $isCurrent = isset($_POST['is_current']) ? 1 : 0;
 
@@ -55,15 +56,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($imgResult['path'] && $journal['cover_image']) delete_uploaded_file($journal['cover_image']);
 
                 $stmt = db()->prepare(
-                    "UPDATE journals SET title=?, volume=?, issue=?, pub_year=?, publication_date=?, editor=?, description=?, cover_image=?, file_path=?, file_size=?, is_current=? WHERE id=?"
+                    "UPDATE journals SET title=?, volume=?, issue=?, pub_year=?, publication_date=?, editor=?, authors=?, description=?, cover_image=?, file_path=?, file_size=?, is_current=? WHERE id=?"
                 );
-                $stmt->execute([$title, $volume, $issue, $pubYear, $pubDate, $editor, $description, $coverPath, $filePath, $fileSize, $isCurrent, $journal['id']]);
+                $stmt->execute([$title, $volume, $issue, $pubYear, $pubDate, $editor, $authors, $description, $coverPath, $filePath, $fileSize, $isCurrent, $journal['id']]);
                 flash_set('success', 'Journal issue updated successfully.');
             } else {
                 $stmt = db()->prepare(
-                    "INSERT INTO journals (title, volume, issue, pub_year, publication_date, editor, description, cover_image, file_path, file_size, is_current) VALUES (?,?,?,?,?,?,?,?,?,?,?)"
+                    "INSERT INTO journals (title, volume, issue, pub_year, publication_date, editor, authors, description, cover_image, file_path, file_size, is_current) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"
                 );
-                $stmt->execute([$title, $volume, $issue, $pubYear, $pubDate, $editor, $description, $imgResult['path'], $pdfResult['path'], $pdfResult['size'], $isCurrent]);
+                $stmt->execute([$title, $volume, $issue, $pubYear, $pubDate, $editor, $authors, $description, $imgResult['path'], $pdfResult['path'], $pdfResult['size'], $isCurrent]);
                 flash_set('success', 'Journal issue uploaded successfully.');
             }
             header('Location: ' . base_url('admin/journals.php'));
@@ -108,6 +109,13 @@ require __DIR__ . '/includes/layout_header.php';
         <label for="editor">Editor (optional)</label>
         <input type="text" id="editor" name="editor" value="<?= $v('editor') ?>">
       </div>
+    </div>
+
+    <div class="form-group">
+      <label for="authors">Author(s) / Contributor(s)</label>
+      <input type="text" id="authors" name="authors" value="<?= $v('authors') ?>"
+             placeholder="e.g. Dr. Jane Doe  —  or  —  A. Bello, C. Okafor &amp; M. Ibrahim  —  or  —  Dept. of Technology Education, ABU Zaria">
+      <div class="hint">Name the individual person or group of persons this journal belongs to. Journals sharing the exact same credit are grouped together under &ldquo;Browse by Author&rdquo;. Leave blank for an unattributed association issue.</div>
     </div>
 
     <div class="form-group">

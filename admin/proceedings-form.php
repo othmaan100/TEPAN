@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $confYear = (int)($_POST['conference_year'] ?? 0);
         $location = trim($_POST['location'] ?? '');
         $description = trim($_POST['description'] ?? '');
+        $editionId = (int)($_POST['conference_edition_id'] ?? 0) ?: null;
 
         if ($title === '') $errors[] = 'Title is required.';
         if ($confName === '') $errors[] = 'Conference name is required.';
@@ -46,15 +47,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($imgResult['path'] && $proceeding['cover_image']) delete_uploaded_file($proceeding['cover_image']);
 
                 $stmt = db()->prepare(
-                    "UPDATE proceedings SET title=?, conference_name=?, conference_year=?, location=?, description=?, cover_image=?, file_path=?, file_size=? WHERE id=?"
+                    "UPDATE proceedings SET title=?, conference_name=?, conference_year=?, location=?, description=?, cover_image=?, file_path=?, file_size=?, conference_edition_id=? WHERE id=?"
                 );
-                $stmt->execute([$title, $confName, $confYear, $location, $description, $coverPath, $filePath, $fileSize, $proceeding['id']]);
+                $stmt->execute([$title, $confName, $confYear, $location, $description, $coverPath, $filePath, $fileSize, $editionId, $proceeding['id']]);
                 flash_set('success', 'Proceedings entry updated successfully.');
             } else {
                 $stmt = db()->prepare(
-                    "INSERT INTO proceedings (title, conference_name, conference_year, location, description, cover_image, file_path, file_size) VALUES (?,?,?,?,?,?,?,?)"
+                    "INSERT INTO proceedings (title, conference_name, conference_year, location, description, cover_image, file_path, file_size, conference_edition_id) VALUES (?,?,?,?,?,?,?,?,?)"
                 );
-                $stmt->execute([$title, $confName, $confYear, $location, $description, $imgResult['path'], $pdfResult['path'], $pdfResult['size']]);
+                $stmt->execute([$title, $confName, $confYear, $location, $description, $imgResult['path'], $pdfResult['path'], $pdfResult['size'], $editionId]);
                 flash_set('success', 'Conference proceedings uploaded successfully.');
             }
             header('Location: ' . base_url('admin/proceedings.php'));
@@ -64,6 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $v = fn($key, $default = '') => e($_POST[$key] ?? ($proceeding[$key] ?? $default));
+$editions = db()->query("SELECT id, name, year FROM conference_editions ORDER BY year DESC, name")->fetchAll();
+$selectedEdition = $_POST['conference_edition_id'] ?? ($proceeding['conference_edition_id'] ?? '');
 
 require __DIR__ . '/includes/layout_header.php';
 ?>
@@ -90,9 +93,20 @@ require __DIR__ . '/includes/layout_header.php';
       </div>
     </div>
 
-    <div class="form-group">
-      <label for="location">Location (optional)</label>
-      <input type="text" id="location" name="location" value="<?= $v('location') ?>" placeholder="e.g. Abuja, Nigeria">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="location">Location (optional)</label>
+        <input type="text" id="location" name="location" value="<?= $v('location') ?>" placeholder="e.g. Abuja, Nigeria">
+      </div>
+      <div class="form-group">
+        <label for="conference_edition_id">Link to Conference Edition (optional)</label>
+        <select id="conference_edition_id" name="conference_edition_id">
+          <option value="">— not linked —</option>
+          <?php foreach ($editions as $ed): ?>
+            <option value="<?= $ed['id'] ?>" <?= (string)$selectedEdition === (string)$ed['id'] ? 'selected' : '' ?>><?= e($ed['name']) ?> (<?= (int)$ed['year'] ?>)</option>
+          <?php endforeach; ?>
+        </select>
+      </div>
     </div>
 
     <div class="form-group">

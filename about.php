@@ -32,6 +32,10 @@ require __DIR__ . '/includes/header.php';
       year, with the latest research always available under the current issue. Separately, our
       <a href="<?= base_url('proceedings.php') ?>">conference proceedings archive</a> preserves the papers
       presented at each annual TEPAN conference.</p>
+    <?php if (defined('JOURNAL_ISSN') && (JOURNAL_ISSN || JOURNAL_EISSN)): ?>
+      <p>The TEPAN journal is registered as
+        <?php if (JOURNAL_ISSN): ?><strong>ISSN <?= e(JOURNAL_ISSN) ?></strong> (print)<?php endif; ?><?php if (JOURNAL_ISSN && JOURNAL_EISSN): ?> and <?php endif; ?><?php if (JOURNAL_EISSN): ?><strong>eISSN <?= e(JOURNAL_EISSN) ?></strong> (online)<?php endif; ?>.</p>
+    <?php endif; ?>
 
     <h2>Get Involved</h2>
     <p>To learn more about membership, submitting a paper, or partnering with TEPAN, please

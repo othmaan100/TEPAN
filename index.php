@@ -12,6 +12,7 @@ $recentProceedings = db()->query("SELECT * FROM proceedings ORDER BY created_at 
 $totalJournals = (int) db()->query("SELECT COUNT(*) FROM journals")->fetchColumn();
 $totalVolumes = (int) db()->query("SELECT COUNT(DISTINCT volume) FROM journals")->fetchColumn();
 $totalProceedings = (int) db()->query("SELECT COUNT(*) FROM proceedings")->fetchColumn();
+$homeAnnouncements = latest_announcements(3);
 
 require __DIR__ . '/includes/header.php';
 ?>
@@ -34,7 +35,22 @@ require __DIR__ . '/includes/header.php';
   </div>
 </section>
 
-<section class="section">
+<?php if ($homeAnnouncements): ?>
+<section class="announce-strip">
+  <div class="container">
+    <span class="announce-strip-label">📢 Announcements</span>
+    <ul>
+      <?php foreach ($homeAnnouncements as $a): ?>
+        <li><a href="<?= base_url('announcement.php?slug=' . e($a['slug'])) ?>"><?= e($a['title']) ?></a>
+          <span class="announce-strip-date"><?= format_date($a['published_at'] ?: $a['created_at'], 'M j') ?></span></li>
+      <?php endforeach; ?>
+    </ul>
+    <a href="<?= base_url('announcements.php') ?>" class="announce-strip-all">All &rarr;</a>
+  </div>
+</section>
+<?php endif; ?>
+
+<section class="section home-current">
   <div class="container">
     <div class="section-head">
       <div>
@@ -77,7 +93,7 @@ require __DIR__ . '/includes/header.php';
   </div>
 </section>
 
-<section class="section section-alt">
+<section class="section section-alt home-recent">
   <div class="container">
     <div class="section-head">
       <div>

@@ -51,6 +51,9 @@ $pageTitle = 'Admin Login';
     <h1>TEPAN Admin</h1>
     <div class="sub">Sign in to manage journals and proceedings</div>
 
+    <?php if ($flash = flash_get('success')): ?>
+      <div class="alert alert-success"><?= e($flash) ?></div>
+    <?php endif; ?>
     <?php if ($error): ?>
       <div class="alert alert-error"><?= e($error) ?></div>
     <?php endif; ?>
@@ -67,7 +70,10 @@ $pageTitle = 'Admin Login';
       </div>
       <button type="submit" class="btn btn-navy" style="width:100%;">Sign In</button>
     </form>
-    <p style="text-align:center;margin-top:18px;"><a href="<?= base_url('index.php') ?>">&larr; Back to site</a></p>
+    <p style="text-align:center;margin-top:14px;">
+      <a href="<?= base_url('admin/forgot-password.php') ?>">Forgot your password?</a>
+    </p>
+    <p style="text-align:center;margin-top:6px;"><a href="<?= base_url('index.php') ?>">&larr; Back to site</a></p>
   </div>
 </div>
 </body>

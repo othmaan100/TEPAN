@@ -96,3 +96,57 @@ function delete_uploaded_file(?string $relativePath): void
     $full = __DIR__ . '/../' . $relativePath;
     if (is_file($full)) @unlink($full);
 }
+
+/**
+ * Generic document uploader (manuscripts, templates, forms).
+ * $allowedExt: list of lowercase extensions, e.g. ['pdf','doc','docx'].
+ * Word/zip MIME reporting is inconsistent, so extension is authoritative for
+ * doc/docx/zip while pdf is still MIME-checked.
+ * Returns ['ok','path','size','error'].
+ */
+function handle_document_upload(string $fieldName, string $subdir, array $allowedExt, bool $required = false, int $maxMb = 20): array
+{
+    $result = ['ok' => true, 'path' => null, 'size' => 0, 'error' => null];
+
+    if (empty($_FILES[$fieldName]) || $_FILES[$fieldName]['error'] === UPLOAD_ERR_NO_FILE) {
+        if ($required) { $result['ok'] = false; $result['error'] = 'A file is required.'; }
+        return $result;
+    }
+
+    $file = $_FILES[$fieldName];
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        return ['ok' => false, 'path' => null, 'size' => 0, 'error' => 'Upload failed (error code ' . $file['error'] . ').'];
+    }
+
+    $maxBytes = $maxMb * 1024 * 1024;
+    if ($file['size'] > $maxBytes) {
+        return ['ok' => false, 'path' => null, 'size' => 0, 'error' => "File is too large. Maximum size is {$maxMb}MB."];
+    }
+
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (!in_array($ext, $allowedExt, true)) {
+        return ['ok' => false, 'path' => null, 'size' => 0, 'error' => 'Allowed file types: ' . implode(', ', $allowedExt) . '.'];
+    }
+
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mime = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+
+    $okByExtOnly = ['doc', 'docx', 'zip', 'rtf', 'odt'];
+    if ($ext === 'pdf' && $mime !== 'application/pdf') {
+        return ['ok' => false, 'path' => null, 'size' => 0, 'error' => 'That file is not a valid PDF.'];
+    }
+    if (!in_array($ext, $okByExtOnly, true) && $ext !== 'pdf') {
+        return ['ok' => false, 'path' => null, 'size' => 0, 'error' => 'Unsupported file type.'];
+    }
+
+    $dir = __DIR__ . '/../uploads/' . trim($subdir, '/') . '/';
+    if (!is_dir($dir)) mkdir($dir, 0755, true);
+
+    $safeName = uniqid($subdir . '_', true) . '.' . $ext;
+    if (!move_uploaded_file($file['tmp_name'], $dir . $safeName)) {
+        return ['ok' => false, 'path' => null, 'size' => 0, 'error' => 'Could not save the uploaded file.'];
+    }
+
+    return ['ok' => true, 'path' => 'uploads/' . trim($subdir, '/') . '/' . $safeName, 'size' => (int)$file['size'], 'error' => null];
+}

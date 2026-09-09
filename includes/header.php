@@ -43,19 +43,53 @@ function nav_active(string $file): string
     <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">
       <span></span><span></span><span></span>
     </button>
+    <?php $authorNav = nav_pages('authors'); $policyNav = nav_pages('policies'); ?>
     <nav class="main-nav" id="mainNav">
       <a href="<?= base_url('index.php') ?>" class="<?= nav_active('index.php') ?>">Home</a>
+
       <div class="nav-dropdown">
         <a href="<?= base_url('journals.php') ?>" class="<?= nav_active('journals.php') ?>">Journals ▾</a>
         <div class="dropdown-menu">
           <a href="<?= base_url('journals.php?view=current') ?>">Current Issue</a>
           <a href="<?= base_url('journals.php?view=volumes') ?>">Browse by Volume</a>
           <a href="<?= base_url('journals.php?view=years') ?>">Browse by Year</a>
+          <a href="<?= base_url('journals.php?view=authors') ?>">Browse by Author</a>
         </div>
       </div>
-      <a href="<?= base_url('proceedings.php') ?>" class="<?= nav_active('proceedings.php') ?>">Conference Proceedings</a>
-      <a href="<?= base_url('about.php') ?>" class="<?= nav_active('about.php') ?>">About</a>
-      <a href="<?= base_url('contact.php') ?>" class="<?= nav_active('contact.php') ?>">Contact</a>
+
+      <div class="nav-dropdown">
+        <a href="<?= base_url('author-resources.php') ?>" class="<?= nav_active('author-resources.php') ?>">For Authors ▾</a>
+        <div class="dropdown-menu">
+          <a href="<?= base_url('submit.php') ?>">Submit a Manuscript</a>
+          <a href="<?= base_url('submission-status.php') ?>">Check Submission Status</a>
+          <a href="<?= base_url('author-resources.php') ?>">Templates &amp; Forms</a>
+          <?php foreach ($authorNav as $p): ?>
+            <a href="<?= base_url('page.php?slug=' . e($p['slug'])) ?>"><?= e($p['title']) ?></a>
+          <?php endforeach; ?>
+        </div>
+      </div>
+
+      <div class="nav-dropdown">
+        <a href="<?= base_url('conferences.php') ?>" class="<?= nav_active('conferences.php') ?>">Conferences ▾</a>
+        <div class="dropdown-menu">
+          <a href="<?= base_url('conferences.php') ?>">Conferences &amp; CFP</a>
+          <a href="<?= base_url('proceedings.php') ?>">Conference Proceedings</a>
+        </div>
+      </div>
+
+      <a href="<?= base_url('announcements.php') ?>" class="<?= nav_active('announcements.php') ?>">News</a>
+
+      <div class="nav-dropdown">
+        <a href="<?= base_url('about.php') ?>" class="<?= nav_active('about.php') ?>">About ▾</a>
+        <div class="dropdown-menu">
+          <a href="<?= base_url('about.php') ?>">About TEPAN</a>
+          <a href="<?= base_url('editorial-board.php') ?>">Editorial Board</a>
+          <?php foreach ($policyNav as $p): ?>
+            <a href="<?= base_url('page.php?slug=' . e($p['slug'])) ?>"><?= e($p['title']) ?></a>
+          <?php endforeach; ?>
+          <a href="<?= base_url('contact.php') ?>">Contact</a>
+        </div>
+      </div>
     </nav>
   </div>
 </header>
