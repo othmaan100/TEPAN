@@ -100,6 +100,7 @@ Fresh installs get the schema from `sql\schema.sql`, then run `bin\seed_content.
   While `MAIL_DEV_SHOW_LINKS` is `true` in `config/database.php`, confirmation/action links are shown on
   screen (or in the admin) so every flow can be completed locally. Set it `false` with real mail in
   production.
+- **To connect a real mail server, follow [docs/MAIL_SETUP.md](docs/MAIL_SETUP.md).**
 
 ### Storage
 - Uploads live under `/uploads/{journals,proceedings,covers,manuscripts,supplementary,resources,board,conferences}`
