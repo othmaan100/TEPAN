@@ -30,7 +30,7 @@ jobs:
       uses: SamKirkland/FTP-Deploy-Action@v4.3.5
       with:
         server: ftp.tepan.com.ng
-        username: othmaan@tepan.com.ng
+        username: othmaan100@tepan.com.ng
         password: ${{ secrets.FTP_PASSWORD }}
         port: 21
         # By default, this uploads the root folder. 
