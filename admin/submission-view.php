@@ -184,6 +184,15 @@ require __DIR__ . '/includes/layout_header.php';
       </form>
     </div>
 
+    <?php if ($s['status'] === 'accepted'): ?>
+      <div class="admin-card" style="margin-top:18px;border-left:4px solid var(--gold);">
+        <h3 style="margin-top:0;">Publish</h3>
+        <p style="color:var(--text-muted);font-size:.88rem;">This manuscript is accepted. Start a journal
+          issue pre-filled with its title, authors and abstract<?= $s['manuscript_file'] && strtolower(pathinfo($s['manuscript_file'], PATHINFO_EXTENSION)) === 'pdf' ? ', and its PDF attached' : '' ?>.</p>
+        <a class="btn btn-gold" href="<?= base_url('admin/journal-form.php?from_submission=' . $s['id']) ?>">Publish as Journal Issue &rarr;</a>
+      </div>
+    <?php endif; ?>
+
     <div class="admin-card" style="margin-top:18px;">
       <h3 style="margin-top:0;">Editor Decision</h3>
       <?php if ($s['decision']): ?>

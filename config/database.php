@@ -1,17 +1,45 @@
 <?php
 /**
  * Database connection for the TEPAN website.
- * Default values match a stock XAMPP install (root / no password).
- * Change these if your MySQL credentials differ.
+ * One file, two environments: it auto-detects whether it's running on this
+ * local XAMPP box (Windows) or the live server (Linux) and picks the matching
+ * credentials, so the SAME file can be deployed as-is — no manual edits, and
+ * nothing to forget to change (or accidentally overwrite) on either side.
  */
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'tepan_db');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+if (PHP_OS_FAMILY === 'Windows') {
+    // Local XAMPP install.
+    define('DB_HOST', 'localhost');
+    define('DB_NAME', 'tepan_db');
+    define('DB_USER', 'root');
+    define('DB_PASS', '');
+} else {
+    // Live server (tepan.com.ng).
+    define('DB_HOST', 'localhost');
+    define('DB_NAME', 'tepan_db');
+    // NOTE: your host's phpMyAdmin lists "tepan_Othmaan100" as the privileged
+    // user for tepan_db — that's almost certainly the real login (shared/cPanel
+    // hosts prefix DB users like this and usually don't allow "root" for app
+    // connections). Using it here; if the site fails to connect live, try
+    // 'root' instead and let me know which one actually works.
+    define('DB_USER', 'tepan_Othmaan100');
+    define('DB_PASS', 'Othmaan100!!!');
+}
 
 define('SITE_NAME', 'Technology Education Practitioners Association of Nigeria');
 define('SITE_SHORT', 'TEPAN');
-define('BASE_URL', '/TEPA');
+
+// BASE_URL is a URL PATH PREFIX, not the domain — the domain is already
+// implied by the address bar. Keep this in sync with the DB switch above:
+if (PHP_OS_FAMILY === 'Windows') {
+    // Local XAMPP: the project sits in a /TEPA subfolder under htdocs.
+    define('BASE_URL', '/TEPA');
+} else {
+    // Live server: deployed at the domain root (https://tepan.com.ng/), not a
+    // subfolder — this MUST be empty. Setting it to '/tepan.com.ng' would make
+    // every link/asset point at https://tepan.com.ng/tepan.com.ng/... (404s) —
+    // that's the exact "no CSS" bug from before, reintroduced.
+    define('BASE_URL', '');
+}
 
 // The journal series' International Standard Serial Numbers (identify the
 // publication as a whole, not individual issues). Leave blank to hide.

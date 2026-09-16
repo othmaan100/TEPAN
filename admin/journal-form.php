@@ -12,6 +12,26 @@ if ($id) {
     if (!$journal) { header('Location: ' . base_url('admin/journals.php')); exit; }
 }
 
+// Minimal glue: pre-fill a NEW issue from an accepted manuscript submission.
+$fromSubmissionId = (int)($_GET['from_submission'] ?? $_POST['from_submission'] ?? 0);
+$fromSubmission = null;
+if (!$journal && $fromSubmissionId) {
+    $stmt = db()->prepare("SELECT * FROM submissions WHERE id = ?");
+    $stmt->execute([$fromSubmissionId]);
+    $fromSubmission = $stmt->fetch() ?: null;
+}
+$prefill = [];
+$manuscriptIsPdf = false;
+if ($fromSubmission) {
+    $prefill = [
+        'title'       => $fromSubmission['title'],
+        'authors'     => trim($fromSubmission['author_name'] . ($fromSubmission['co_authors'] ? ', ' . $fromSubmission['co_authors'] : '')),
+        'description' => $fromSubmission['abstract'],
+    ];
+    $manuscriptIsPdf = strtolower(pathinfo((string)$fromSubmission['manuscript_file'], PATHINFO_EXTENSION)) === 'pdf'
+        && is_file(__DIR__ . '/../' . $fromSubmission['manuscript_file']);
+}
+
 $pageTitle = $journal ? 'Edit Journal Issue' : 'Upload Journal Issue';
 $activeNav = 'journals';
 $errors = [];
@@ -34,8 +54,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($issue < 1) $errors[] = 'Issue must be at least 1.';
         if (!$pubDate || !strtotime($pubDate)) $errors[] = 'A valid publication date is required.';
 
-        $pdfResult = handle_pdf_upload('pdf_file', 'journals', required: !$journal);
+        $pdfResult = handle_pdf_upload('pdf_file', 'journals', required: false);
         if (!$pdfResult['ok']) $errors[] = $pdfResult['error'];
+
+        // No new upload + publishing from a submission whose file is a PDF: reuse that file.
+        if (!$journal && !$pdfResult['path'] && $fromSubmission && $manuscriptIsPdf) {
+            $src = __DIR__ . '/../' . $fromSubmission['manuscript_file'];
+            $rel = 'uploads/journals/journals_' . uniqid('', true) . '.pdf';
+            if (@copy($src, __DIR__ . '/../' . $rel)) {
+                $pdfResult = ['ok' => true, 'path' => $rel, 'size' => (int) filesize($src), 'error' => null];
+            } else {
+                $errors[] = 'Could not attach the accepted manuscript file. Please upload the PDF manually.';
+            }
+        }
+
+        // A NEW issue still needs a file one way or another.
+        if (!$journal && !$pdfResult['path'] && !$errors) {
+            $errors[] = $fromSubmission
+                ? 'The accepted manuscript is not a PDF — please upload the final typeset PDF.'
+                : 'A PDF file is required.';
+        }
 
         $imgResult = handle_image_upload('cover_image', 'covers');
         if (!$imgResult['ok']) $errors[] = $imgResult['error'];
@@ -65,7 +103,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     "INSERT INTO journals (title, volume, issue, pub_year, publication_date, editor, authors, description, cover_image, file_path, file_size, is_current) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"
                 );
                 $stmt->execute([$title, $volume, $issue, $pubYear, $pubDate, $editor, $authors, $description, $imgResult['path'], $pdfResult['path'], $pdfResult['size'], $isCurrent]);
-                flash_set('success', 'Journal issue uploaded successfully.');
+                $newJournalId = (int) db()->lastInsertId();
+
+                if ($fromSubmission) {
+                    db()->prepare("INSERT INTO submission_events (submission_id, event, detail) VALUES (?, 'Published', ?)")
+                        ->execute([$fromSubmission['id'], 'Journal issue #' . $newJournalId . ' — Vol ' . $volume . ', Issue ' . $issue]);
+                    flash_set('success', 'Journal issue created from manuscript ' . $fromSubmission['reference'] . '.');
+                } else {
+                    flash_set('success', 'Journal issue uploaded successfully.');
+                }
             }
             header('Location: ' . base_url('admin/journals.php'));
             exit;
@@ -73,16 +119,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$v = fn($key, $default = '') => e($_POST[$key] ?? ($journal[$key] ?? $default));
+$v = fn($key, $default = '') => e($_POST[$key] ?? ($journal[$key] ?? ($prefill[$key] ?? $default)));
 
 require __DIR__ . '/includes/layout_header.php';
 ?>
 
 <?php foreach ($errors as $err): ?><div class="alert alert-error"><?= e($err) ?></div><?php endforeach; ?>
 
+<?php if ($fromSubmission): ?>
+  <div class="alert alert-success">
+    Pre-filled from accepted manuscript <strong><?= e($fromSubmission['reference']) ?></strong>
+    (<?= e($fromSubmission['author_name']) ?>).
+    Set the volume, issue and publication date, then save.
+    <?php if (!$manuscriptIsPdf): ?>
+      <br>The accepted file is not a PDF — upload the final typeset PDF below.
+    <?php endif; ?>
+  </div>
+<?php endif; ?>
+
 <div class="form-card" style="max-width:720px;">
   <form method="post" enctype="multipart/form-data">
     <?= csrf_field() ?>
+    <?php if ($fromSubmission): ?><input type="hidden" name="from_submission" value="<?= (int)$fromSubmission['id'] ?>"><?php endif; ?>
 
     <div class="form-group">
       <label for="title">Journal / Issue Title</label>
@@ -124,9 +182,18 @@ require __DIR__ . '/includes/layout_header.php';
     </div>
 
     <div class="form-group">
-      <label for="pdf_file">Journal PDF <?= $journal ? '(leave blank to keep current file)' : '' ?></label>
-      <input type="file" id="pdf_file" name="pdf_file" accept="application/pdf" <?= $journal ? '' : 'required' ?>>
-      <?php if ($journal): ?><div class="hint">Current file: <?= e(basename($journal['file_path'])) ?> (<?= format_filesize((int)$journal['file_size']) ?>)</div><?php endif; ?>
+      <?php $pdfOptional = $journal || ($fromSubmission && $manuscriptIsPdf); ?>
+      <label for="pdf_file">Journal PDF
+        <?php if ($journal): ?>(leave blank to keep current file)
+        <?php elseif ($fromSubmission && $manuscriptIsPdf): ?>(leave blank to use the accepted manuscript PDF)
+        <?php endif; ?>
+      </label>
+      <input type="file" id="pdf_file" name="pdf_file" accept="application/pdf" <?= $pdfOptional ? '' : 'required' ?>>
+      <?php if ($journal): ?>
+        <div class="hint">Current file: <?= e(basename($journal['file_path'])) ?> (<?= format_filesize((int)$journal['file_size']) ?>)</div>
+      <?php elseif ($fromSubmission && $manuscriptIsPdf): ?>
+        <div class="hint">Will attach: <?= e(basename($fromSubmission['manuscript_file'])) ?> (the accepted manuscript). Upload a file here to override it.</div>
+      <?php endif; ?>
       <div class="hint">PDF only, maximum 25MB.</div>
     </div>
 
