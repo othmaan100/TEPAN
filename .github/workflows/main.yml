@@ -1,0 +1,40 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # --- OPTIONAL BUILD STEPS ---
+    # If your project requires compiling, building, or installing dependencies,
+    # uncomment and adjust these lines. If it's a static site, you can delete them.
+    # - name: Set up Node.js
+    #   uses: actions/setup-node@v4
+    #   with:
+    #     node-version: '20'
+    # - name: Install dependencies
+    #   run: npm install
+    # - name: Build application
+    #   run: npm run build
+    # ----------------------------
+
+    # --- DEPLOY TO CPANEL VIA FTP ---
+    - name: Deploy to cPanel FTP
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      with:
+        server: ftp.tepan.com.ng
+        username: othmaan@tepan.com.ng
+        password: ${{ secrets.FTP_PASSWORD }}
+        port: 21
+        # By default, this uploads the root folder. 
+        # If your files are inside a 'dist' or 'build' folder, change this to ./dist
+        local-dir: ./ 
+        # Optional: If you need to upload to a specific subfolder inside cPanel, use server-dir
+        # server-dir: ./public_html/
